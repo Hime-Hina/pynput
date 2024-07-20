@@ -24,7 +24,6 @@ from six.moves import input
 
 import pynput
 
-
 #: The name of the current backend
 BACKEND = pynput.keyboard.Controller.__module__.rsplit('.', 1)[-1][1:]
 

@@ -26,7 +26,7 @@ The keyboard implementation for *Xorg*.
 
 # pylint: disable=W0611
 try:
-    import pynput._util.xorg
+    from .._util import xorg
 except Exception as e:
     raise ImportError('failed to acquire X connection: {}'.format(str(e)), e)
 # pylint: enable=W0611
@@ -37,29 +37,17 @@ import threading
 import Xlib.display
 import Xlib.ext
 import Xlib.ext.xtest
+import Xlib.keysymdef.xkb
+import Xlib.protocol
 import Xlib.X
 import Xlib.XK
-import Xlib.protocol
-import Xlib.keysymdef.xkb
 
-from pynput._util import NotifierMixin
-from pynput._util.xorg import (
-    alt_mask,
-    alt_gr_mask,
-    char_to_keysym,
-    display_manager,
-    index_to_shift,
-    keyboard_mapping,
-    ListenerMixin,
-    numlock_mask,
-    shift_to_index,
-    symbol_to_keysym)
-from pynput._util.xorg_keysyms import (
-    CHARS,
-    DEAD_KEYS,
-    KEYPAD_KEYS,
-    KEYSYMS,
-    SYMBOLS)
+from .._util import NotifierMixin
+from .._util.xorg import (ListenerMixin, alt_gr_mask, alt_mask, char_to_keysym,
+                          display_manager, index_to_shift, keyboard_mapping,
+                          numlock_mask, shift_to_index, symbol_to_keysym)
+from .._util.xorg_keysyms import (CHARS, DEAD_KEYS, KEYPAD_KEYS, KEYSYMS,
+                                  SYMBOLS)
 from . import _base
 
 

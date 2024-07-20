@@ -25,12 +25,11 @@ The mouse implementation for *macOS*.
 # We implement stubs
 
 import enum
-import Quartz
 
+import Quartz
 from AppKit import NSEvent
 
-from pynput._util.darwin import (
-    ListenerMixin)
+from .._util.darwin import ListenerMixin
 from . import _base
 
 

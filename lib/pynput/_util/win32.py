@@ -28,13 +28,11 @@ import contextlib
 import ctypes
 import itertools
 import threading
+import time
+from ctypes import windll, wintypes
 
-from ctypes import (
-    windll,
-    wintypes)
-
-from . import AbstractListener, win32_vks as VK
-
+from . import AbstractListener
+from . import win32_vks as VK
 
 # LPDWORD is not in ctypes.wintypes on Python 2
 if not hasattr(wintypes, 'LPDWORD'):
@@ -132,7 +130,7 @@ MapVirtualKey.MAPVK_VK_TO_VSC = 0
 SendInput = windll.user32.SendInput
 SendInput.argtypes = (
     wintypes.UINT,
-    ctypes.c_voidp,  # Really LPINPUT
+    ctypes.c_void_p,  # Really LPINPUT
     ctypes.c_int)
 
 GetCurrentThreadId = windll.kernel32.GetCurrentThreadId
@@ -149,13 +147,13 @@ class MessageLoop(object):
 
     _GetMessage = windll.user32.GetMessageW
     _GetMessage.argtypes = (
-        ctypes.c_voidp,  # Really _LPMSG
+        ctypes.c_void_p,  # Really _LPMSG
         wintypes.HWND,
         wintypes.UINT,
         wintypes.UINT)
     _PeekMessage = windll.user32.PeekMessageW
     _PeekMessage.argtypes = (
-        ctypes.c_voidp,  # Really _LPMSG
+        ctypes.c_void_p,  # Really _LPMSG
         wintypes.HWND,
         wintypes.UINT,
         wintypes.UINT,
@@ -437,7 +435,7 @@ class KeyTranslator(object):
         wintypes.DWORD,)
     _GetKeyboardState = ctypes.windll.user32.GetKeyboardState
     _GetKeyboardState.argtypes = (
-        ctypes.c_voidp,)
+        ctypes.c_void_p,)
     _GetKeyState = ctypes.windll.user32.GetAsyncKeyState
     _GetKeyState.argtypes = (
         ctypes.c_int,)
@@ -450,8 +448,8 @@ class KeyTranslator(object):
     _ToUnicodeEx.argtypes = (
         wintypes.UINT,
         wintypes.UINT,
-        ctypes.c_voidp,
-        ctypes.c_voidp,
+        ctypes.c_void_p,
+        ctypes.c_void_p,
         ctypes.c_int,
         wintypes.UINT,
         wintypes.HKL)
@@ -535,7 +533,7 @@ class KeyTranslator(object):
             state[VK.MENU] = 0x80 if alt else 0x00
 
             # For each virtual key code...
-            out = (ctypes.wintypes.WCHAR * 5)()
+            out = (wintypes.WCHAR * 5)()
             for (scan, vk) in enumerate(vks):
                 # ...translate it to a unicode character
                 count = self._ToUnicodeEx(

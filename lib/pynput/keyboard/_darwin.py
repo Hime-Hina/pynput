@@ -26,35 +26,20 @@ The keyboard implementation for *macOS*.
 
 import enum
 
-from Quartz import (
-    CGEventCreateKeyboardEvent,
-    CGEventGetFlags,
-    CGEventGetIntegerValueField,
-    CGEventGetType,
-    CGEventKeyboardGetUnicodeString,
-    CGEventKeyboardSetUnicodeString,
-    CGEventMaskBit,
-    CGEventPost,
-    CGEventSetFlags,
-    kCGEventFlagMaskAlternate,
-    kCGEventFlagMaskCommand,
-    kCGEventFlagMaskControl,
-    kCGEventFlagMaskShift,
-    kCGEventFlagsChanged,
-    kCGEventKeyDown,
-    kCGEventKeyUp,
-    kCGHIDEventTap,
-    kCGKeyboardEventKeycode,
-    NSEvent,
-    NSSystemDefined)
+from Quartz import (CGEventCreateKeyboardEvent, CGEventGetFlags,
+                    CGEventGetIntegerValueField, CGEventGetType,
+                    CGEventKeyboardGetUnicodeString,
+                    CGEventKeyboardSetUnicodeString, CGEventMaskBit,
+                    CGEventPost, CGEventSetFlags, NSEvent, NSSystemDefined,
+                    kCGEventFlagMaskAlternate, kCGEventFlagMaskCommand,
+                    kCGEventFlagMaskControl, kCGEventFlagMaskShift,
+                    kCGEventFlagsChanged, kCGEventKeyDown, kCGEventKeyUp,
+                    kCGHIDEventTap, kCGKeyboardEventKeycode)
 
-from pynput._util.darwin import (
-    get_unicode_to_keycode_map,
-    keycode_context,
-    ListenerMixin)
-from pynput._util.darwin_vks import SYMBOLS
+from .._util.darwin import (ListenerMixin, get_unicode_to_keycode_map,
+                            keycode_context)
+from .._util.darwin_vks import SYMBOLS
 from . import _base
-
 
 # From hidsystem/ev_keymap.h
 NX_KEYTYPE_PLAY = 16

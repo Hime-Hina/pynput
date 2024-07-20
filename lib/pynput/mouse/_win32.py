@@ -26,19 +26,11 @@ The mouse implementation for *Windows*.
 
 import ctypes
 import enum
+from ctypes import windll, wintypes
 
-from ctypes import (
-    windll,
-    wintypes)
-
-from pynput._util import NotifierMixin
-from pynput._util.win32 import (
-    INPUT,
-    INPUT_union,
-    ListenerMixin,
-    MOUSEINPUT,
-    SendInput,
-    SystemHook)
+from .._util import NotifierMixin
+from .._util.win32 import (INPUT, MOUSEINPUT, INPUT_union, ListenerMixin,
+                           SendInput, SystemHook)
 from . import _base
 
 #: A constant used as a factor when constructing mouse scroll data.
@@ -183,7 +175,8 @@ class Listener(ListenerMixin, _base.Listener):
             ('mouseData', wintypes.DWORD),
             ('flags', wintypes.DWORD),
             ('time', wintypes.DWORD),
-            ('dwExtraInfo', ctypes.c_void_p)]
+            ('dwExtraInfo', ctypes.c_void_p)
+        ]
 
     #: A pointer to a :class:`_MSLLHOOKSTRUCT`
     _LPMSLLHOOKSTRUCT = ctypes.POINTER(_MSLLHOOKSTRUCT)

@@ -33,9 +33,7 @@ import threading
 import time
 
 import six
-
 from six.moves import queue
-
 
 #: Possible resolutions for import related errors.
 RESOLUTIONS = {

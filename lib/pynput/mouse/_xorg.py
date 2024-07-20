@@ -30,23 +30,21 @@ The keyboard implementation for *Xorg*.
 
 # pylint: disable=W0611
 try:
-    import pynput._util.xorg
+    from .._util import xorg
 except Exception as e:
     raise ImportError('failed to acquire X connection: {}'.format(str(e)), e)
 # pylint: enable=W0611
 
 import enum
+
 import Xlib.display
 import Xlib.ext
 import Xlib.ext.xtest
-import Xlib.X
 import Xlib.protocol
+import Xlib.X
 
-from pynput._util.xorg import (
-    display_manager,
-    ListenerMixin)
+from .._util.xorg import ListenerMixin, display_manager
 from . import _base
-
 
 # pylint: disable=C0103
 Button = enum.Enum(

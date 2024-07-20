@@ -25,8 +25,8 @@ See the documentation for more information.
 
 import itertools
 
-from pynput._util import backend, Events
-
+from .._util import Events as _Events
+from .._util import backend
 
 backend = backend(__name__)
 KeyCode = backend.KeyCode
@@ -62,7 +62,7 @@ _CONTROL_CODES = {
 # pylint: enable=C0326
 
 
-class Events(Events):
+class Events(_Events):
     """A keyboard event listener supporting synchronous iteration over the
     events.
 
@@ -76,14 +76,14 @@ class Events(Events):
     """
     _Listener = Listener
 
-    class Press(Events.Event):
+    class Press(_Events.Event):
         """A key press event.
         """
         def __init__(self, key):
             #: The key.
             self.key = key
 
-    class Release(Events.Event):
+    class Release(_Events.Event):
         """A key release event.
         """
         def __init__(self, key):

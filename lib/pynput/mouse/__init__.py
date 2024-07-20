@@ -23,8 +23,8 @@ See the documentation for more information.
 # pylint: disable=C0103
 # Button, Controller and Listener are not constants
 
-from pynput._util import backend, Events
-
+from .._util import Events as _Events
+from .._util import backend
 
 backend = backend(__name__)
 Button = backend.Button
@@ -33,7 +33,7 @@ Listener = backend.Listener
 del backend
 
 
-class Events(Events):
+class Events(_Events):
     """A mouse event listener supporting synchronous iteration over the events.
 
     Possible events are:
@@ -49,7 +49,7 @@ class Events(Events):
     """
     _Listener = Listener
 
-    class Move(Events.Event):
+    class Move(_Events.Event):
         """A move event.
         """
         def __init__(self, x, y):
@@ -59,7 +59,7 @@ class Events(Events):
             #: The Y screen coordinate.
             self.y = y
 
-    class Click(Events.Event):
+    class Click(_Events.Event):
         """A click event.
         """
         def __init__(self, x, y, button, pressed):
@@ -75,7 +75,7 @@ class Events(Events):
             #: Whether the button was pressed.
             self.pressed = pressed
 
-    class Scroll(Events.Event):
+    class Scroll(_Events.Event):
         """A scroll event.
         """
         def __init__(self, x, y, dx, dy):

@@ -27,23 +27,15 @@ The keyboard implementation for *Windows*.
 import contextlib
 import ctypes
 import enum
-import six
-
 from ctypes import wintypes
 
-import pynput._util.win32_vks as VK
+import six
 
-from pynput._util import AbstractListener
-from pynput._util.win32 import (
-    INPUT,
-    INPUT_union,
-    KEYBDINPUT,
-    KeyTranslator,
-    ListenerMixin,
-    MapVirtualKey,
-    SendInput,
-    SystemHook,
-    VkKeyScan)
+from .._util import AbstractListener
+from .._util import win32_vks as VK
+from .._util.win32 import (INPUT, KEYBDINPUT, INPUT_union, KeyTranslator,
+                           ListenerMixin, MapVirtualKey, SendInput, SystemHook,
+                           VkKeyScan)
 from . import _base
 
 
