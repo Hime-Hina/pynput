@@ -52,17 +52,22 @@ class Events(_Events):
     class Move(_Events.Event):
         """A move event.
         """
-        def __init__(self, x, y):
+        def __init__(self, x, y,
+                     timestamp: int, is_injected: bool):
             #: The X screen coordinate.
             self.x = x
 
             #: The Y screen coordinate.
             self.y = y
 
+            self.timestamp = timestamp
+            self.is_injected = is_injected
+
     class Click(_Events.Event):
         """A click event.
         """
-        def __init__(self, x, y, button, pressed):
+        def __init__(self, x, y, button, pressed,
+                     timestamp: int, is_injected: bool):
             #: The X screen coordinate.
             self.x = x
 
@@ -75,10 +80,14 @@ class Events(_Events):
             #: Whether the button was pressed.
             self.pressed = pressed
 
+            self.timestamp = timestamp
+            self.is_injected = is_injected
+
     class Scroll(_Events.Event):
         """A scroll event.
         """
-        def __init__(self, x, y, dx, dy):
+        def __init__(self, x, y, dx, dy,
+                     timestamp: int, is_injected: bool):
             #: The X screen coordinate.
             self.x = x
 
@@ -90,6 +99,9 @@ class Events(_Events):
 
             #: The number of vertical steps.
             self.dy = dy
+
+            self.timestamp = timestamp
+            self.is_injected = is_injected
 
     def __init__(self):
         super(Events, self).__init__(

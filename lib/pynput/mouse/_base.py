@@ -25,6 +25,7 @@ is located in a platform dependent module.
 # We implement stubs
 
 import enum
+from typing import Callable, Optional
 
 from .. import _logger
 from .._util import AbstractListener, prefix
@@ -249,15 +250,26 @@ class Listener(AbstractListener):
             If ``self.suppress_event()`` is called, the event is suppressed
             system wide.
     """
-    def __init__(self, on_move=None, on_click=None, on_scroll=None,
+    def __init__(self,
+                 on_move: Optional[
+                     Callable[[int, int, int, bool],
+                              Optional[bool]]]=None,
+                 on_click=None,
+                 on_scroll=None,
                  suppress=False, **kwargs):
         self._log = _logger(self.__class__)
         option_prefix = prefix(Listener, self.__class__)
+        if option_prefix is None:
+            raise ValueError('Unknown platform')
         self._options = {
             key[len(option_prefix):]: value
             for key, value in kwargs.items()
-            if key.startswith(option_prefix)}
+            if key.startswith(option_prefix)
+        }
         super(Listener, self).__init__(
-            on_move=on_move, on_click=on_click, on_scroll=on_scroll,
-            suppress=suppress)
+            on_move=on_move,
+            on_click=on_click,
+            on_scroll=on_scroll,
+            suppress=suppress
+        )
 # pylint: enable=W0223

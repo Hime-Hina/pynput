@@ -28,6 +28,7 @@ import contextlib
 import ctypes
 import enum
 from ctypes import wintypes
+from typing import NamedTuple
 
 import six
 
@@ -223,6 +224,12 @@ class Listener(ListenerMixin, _base.Listener):
     _WM_SYSKEYDOWN = 0x0104
     _WM_SYSKEYUP = 0x0105
 
+    _LLKHF_EXTENDED = 0x01
+    _LLKHF_LOWER_IL_INJECTED = 0x02
+    _LLKHF_INJECTED = 0x10
+    _LLKHF_ALTDOWN = 0x20
+    _LLKHF_UP = 0x80
+
     # A bit flag attached to messages indicating that the payload is an actual
     # UTF-16 character code
     _UTF16_FLAG = 0x1000
@@ -247,7 +254,8 @@ class Listener(ListenerMixin, _base.Listener):
         for key in Key}
 
     _HANDLED_EXCEPTIONS = (
-        SystemHook.SuppressException,)
+        SystemHook.SuppressException,
+    )
 
     class _KBDLLHOOKSTRUCT(ctypes.Structure):
         """Contains information about a mouse event passed to a
@@ -260,6 +268,15 @@ class Listener(ListenerMixin, _base.Listener):
             ('time', wintypes.DWORD),
             ('dwExtraInfo', ctypes.c_void_p)]
 
+    _CONVERTED = NamedTuple(
+        '_CONVERTED',
+        (
+            ('vk', int),
+            ('timestamp', int),
+            ('is_injected', bool)
+        )
+    )
+
     #: A pointer to a :class:`KBDLLHOOKSTRUCT`
     _LPKBDLLHOOKSTRUCT = ctypes.POINTER(_KBDLLHOOKSTRUCT)
 
@@ -268,27 +285,37 @@ class Listener(ListenerMixin, _base.Listener):
         self._translator = KeyTranslator()
         self._event_filter = self._options.get(
             'event_filter',
-            lambda msg, data: True)
+            lambda msg, data: True
+        )
+        self._converted: dict[int, Listener._CONVERTED] = {}
 
-    def _convert(self, code, msg, lpdata):
+    def _convert(self, code, msg, lpdata, timestamp):
         if code != SystemHook.HC_ACTION:
-            return
+            return None
 
         data = ctypes.cast(lpdata, self._LPKBDLLHOOKSTRUCT).contents
-        is_packet = data.vkCode == self._VK_PACKET
-
         # Suppress further propagation of the event if it is filtered
         if self._event_filter(msg, data) is False:
             return None
-        elif is_packet:
-            return (msg | self._UTF16_FLAG, data.scanCode)
-        else:
-            return (msg, data.vkCode)
+
+        is_packet = data.vkCode == self._VK_PACKET
+
+        vk = data.scanCode if is_packet else data.vkCode
+        is_injected = bool(data.flags & self._LLKHF_INJECTED)
+
+        converted = self._CONVERTED(vk, timestamp, is_injected)
+        lparam = id(converted)
+        self._converted[lparam] = converted
+
+        return (msg | self._UTF16_FLAG if is_packet else msg, lparam)
 
     @AbstractListener._emitter
     def _process(self, wparam, lparam):
         msg = wparam
-        vk = lparam
+        data = self._converted.pop(lparam)
+        vk = data.vk
+        is_injected = data.is_injected
+        timestamp = data.timestamp
 
         # If the key has the UTF-16 flag, we treat it as a unicode character,
         # otherwise convert the event to a KeyCode; this may fail, and in that
@@ -305,10 +332,10 @@ class Listener(ListenerMixin, _base.Listener):
                 key = None
 
         if msg in self._PRESS_MESSAGES:
-            self.on_press(key)
+            self.on_press(key, timestamp, is_injected)
 
         elif msg in self._RELEASE_MESSAGES:
-            self.on_release(key)
+            self.on_release(key, timestamp, is_injected)
 
     # pylint: disable=R0201
     @contextlib.contextmanager
@@ -321,6 +348,7 @@ class Listener(ListenerMixin, _base.Listener):
     def _on_notification(self, code, wparam, lparam):
         """Receives ``WM_INPUTLANGCHANGE`` and updates the cached layout.
         """
+        print(code, wparam, lparam)
         if code == self._WM_INPUTLANGCHANGE:
             self._translator.update_layout()
 

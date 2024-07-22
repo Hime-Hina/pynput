@@ -266,7 +266,7 @@ class SystemHook(object):
         """
         pass
 
-    def __init__(self, hook_id, on_hook=lambda code, msg, lpdata: None):
+    def __init__(self, hook_id, on_hook=lambda code, msg, lpdata, t: None):
         self.hook_id = hook_id
         self.on_hook = on_hook
         self._hook = None
@@ -297,20 +297,22 @@ class SystemHook(object):
     @staticmethod
     @_HOOKPROC
     def _handler(code, msg, lpdata):
+        t = time.perf_counter_ns()
         key = threading.current_thread().ident
         self = SystemHook._HOOKS.get(key, None)
-        if self:
-            # pylint: disable=W0702; we want to silence errors
-            try:
-                self.on_hook(code, msg, lpdata)
-            except self.SuppressException:
-                # Return non-zero to stop event propagation
-                return 1
-            except:
-                # Ignore any errors
-                pass
-            # pylint: enable=W0702
-            return SystemHook._CallNextHookEx(0, code, msg, lpdata)
+        if self is None:
+            return
+        # pylint: disable=W0702; we want to silence errors
+        try:
+            self.on_hook(code, msg, lpdata, t)
+        except self.SuppressException:
+            # Return non-zero to stop event propagation
+            return 1
+        except:
+            # Ignore any errors
+            pass
+        # pylint: enable=W0702
+        return SystemHook._CallNextHookEx(0, code, msg, lpdata)
 
 
 class ListenerMixin(object):
@@ -373,7 +375,7 @@ class ListenerMixin(object):
             pass
 
     @AbstractListener._emitter
-    def _handler(self, code, msg, lpdata):
+    def _handler(self, code, msg, lpdata, timestamp):
         """The callback registered with *Windows* for events.
 
         This method will post the message :attr:`_WM_PROCESS` to the message
@@ -381,16 +383,16 @@ class ListenerMixin(object):
         parameters are retrieved with a call to :meth:`_handle`.
         """
         try:
-            converted = self._convert(code, msg, lpdata)
+            converted = self._convert(code, msg, lpdata, timestamp)
             if converted is not None:
                 self._message_loop.post(self._WM_PROCESS, *converted)
         except NotImplementedError:
-            self._handle(code, msg, lpdata)
+            self._handle(code, msg, lpdata, timestamp)
 
         if self.suppress:
             self.suppress_event()
 
-    def _convert(self, code, msg, lpdata):
+    def _convert(self, code, msg, lpdata, timestamp):
         """The device specific callback handler.
 
         This method converts a low-level message and data to a
@@ -405,7 +407,7 @@ class ListenerMixin(object):
         """
         raise NotImplementedError()
 
-    def _handle(self, code, msg, lpdata):
+    def _handle(self, code, msg, lpdata, timestamp):
         """The device specific callback handler.
 
         This method calls the appropriate callback registered when this

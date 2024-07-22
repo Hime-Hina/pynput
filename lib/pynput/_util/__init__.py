@@ -31,6 +31,7 @@ import os
 import sys
 import threading
 import time
+from typing import Optional
 
 import six
 from six.moves import queue
@@ -81,7 +82,7 @@ def backend(package):
             if resolutions else '')
 
 
-def prefix(base, cls):
+def prefix(base: type, cls: type) -> Optional[str]:
     """Calculates the prefix to use for platform specific options for a
     specific class.
 

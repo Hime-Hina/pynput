@@ -27,8 +27,9 @@ The mouse implementation for *Windows*.
 import ctypes
 import enum
 from ctypes import windll, wintypes
+from typing import NamedTuple
 
-from .._util import NotifierMixin
+from .._util import AbstractListener, NotifierMixin
 from .._util.win32 import (INPUT, MOUSEINPUT, INPUT_union, ListenerMixin,
                            SendInput, SystemHook)
 from . import _base
@@ -140,6 +141,9 @@ class Listener(ListenerMixin, _base.Listener):
     XBUTTON1 = 1
     XBUTTON2 = 2
 
+    _LLMHF_INJECTED = 0x1
+    _LLMHF_LOWER_IL_INJECTED = 0x2
+
     #: A mapping from messages to button events
     CLICK_BUTTONS = {
         WM_LBUTTONDOWN: (Button.left, True),
@@ -178,6 +182,16 @@ class Listener(ListenerMixin, _base.Listener):
             ('dwExtraInfo', ctypes.c_void_p)
         ]
 
+    _CONVERTED = NamedTuple(
+        '_CONVERTED',
+        (
+            ('pt', wintypes.POINT),
+            ('mouseData', int),
+            ('timestamp', int),
+            ('is_injected', bool),
+        )
+    )
+
     #: A pointer to a :class:`_MSLLHOOKSTRUCT`
     _LPMSLLHOOKSTRUCT = ctypes.POINTER(_MSLLHOOKSTRUCT)
 
@@ -185,9 +199,55 @@ class Listener(ListenerMixin, _base.Listener):
         super(Listener, self).__init__(*args, **kwargs)
         self._event_filter = self._options.get(
             'event_filter',
-            lambda msg, data: True)
+            lambda msg, data: True
+        )
+        self._converted: dict[int, Listener._CONVERTED] = {}
 
-    def _handle(self, code, msg, lpdata):
+    def _convert(self, code, msg, lpdata, timestamp):
+        if code != SystemHook.HC_ACTION:
+            return None
+
+        data = ctypes.cast(lpdata, self._LPMSLLHOOKSTRUCT).contents
+
+        # Suppress further propagation of the event if it is filtered
+        if self._event_filter(msg, data) is False:
+            return None
+
+        is_injected = bool(data.flags & self._LLMHF_INJECTED)
+
+        converted = Listener._CONVERTED(
+            data.pt,
+            data.mouseData,
+            timestamp,
+            is_injected
+        )
+        lparam = id(converted)
+        self._converted[lparam] = converted
+
+        return (msg, lparam)
+
+    @AbstractListener._emitter
+    def _process(self, wparam, lparam):
+        msg = wparam
+        data = self._converted.pop(lparam)
+
+        if msg == self.WM_MOUSEMOVE:
+            self.on_move(data.pt.x, data.pt.y, data.timestamp, data.is_injected)
+        elif msg in self.CLICK_BUTTONS:
+            button, pressed = self.CLICK_BUTTONS[msg]
+            self.on_click(data.pt.x, data.pt.y, button, pressed,
+                          data.timestamp, data.is_injected)
+        elif msg in self.X_BUTTONS:
+            button, pressed = self.X_BUTTONS[msg][data.mouseData >> 16]
+            self.on_click(data.pt.x, data.pt.y, button, pressed,
+                          data.timestamp, data.is_injected)
+        elif msg in self.SCROLL_BUTTONS:
+            mx, my = self.SCROLL_BUTTONS[msg]
+            dd = wintypes.SHORT(data.mouseData >> 16).value // WHEEL_DELTA
+            self.on_scroll(data.pt.x, data.pt.y, dd * mx, dd * my,
+                           data.timestamp, data.is_injected)
+
+    def _handle(self, code, msg, lpdata, timestamp):
         if code != SystemHook.HC_ACTION:
             return
 
@@ -197,18 +257,21 @@ class Listener(ListenerMixin, _base.Listener):
         if self._event_filter(msg, data) is False:
             return
 
-        if msg == self.WM_MOUSEMOVE:
-            self.on_move(data.pt.x, data.pt.y)
+        is_injected = bool(data.flags & self._LLMHF_INJECTED)
 
+        if msg == self.WM_MOUSEMOVE:
+            self.on_move(data.pt.x, data.pt.y,
+                         timestamp, is_injected)
         elif msg in self.CLICK_BUTTONS:
             button, pressed = self.CLICK_BUTTONS[msg]
-            self.on_click(data.pt.x, data.pt.y, button, pressed)
-
+            self.on_click(data.pt.x, data.pt.y, button, pressed,
+                          timestamp, is_injected)
         elif msg in self.X_BUTTONS:
             button, pressed = self.X_BUTTONS[msg][data.mouseData >> 16]
-            self.on_click(data.pt.x, data.pt.y, button, pressed)
-
+            self.on_click(data.pt.x, data.pt.y, button, pressed,
+                          timestamp, is_injected)
         elif msg in self.SCROLL_BUTTONS:
             mx, my = self.SCROLL_BUTTONS[msg]
             dd = wintypes.SHORT(data.mouseData >> 16).value // WHEEL_DELTA
-            self.on_scroll(data.pt.x, data.pt.y, dd * mx, dd * my)
+            self.on_scroll(data.pt.x, data.pt.y, dd * mx, dd * my,
+                           timestamp, is_injected)

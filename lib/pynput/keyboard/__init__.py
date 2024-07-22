@@ -79,16 +79,20 @@ class Events(_Events):
     class Press(_Events.Event):
         """A key press event.
         """
-        def __init__(self, key):
+        def __init__(self, key, timestamp: int, is_injected: bool):
             #: The key.
             self.key = key
+            self.timestamp = timestamp
+            self.is_injected = is_injected
 
     class Release(_Events.Event):
         """A key release event.
         """
-        def __init__(self, key):
+        def __init__(self, key, timestamp: int, is_injected: bool):
             #: The key.
             self.key = key
+            self.timestamp = timestamp
+            self.is_injected = is_injected
 
     def __init__(self):
         super(Events, self).__init__(
