@@ -20,7 +20,6 @@ The module containing mouse classes.
 See the documentation for more information.
 """
 
-# pylint: disable=C0103
 # Button, Controller and Listener are not constants
 
 from .._util import Events as _Events
@@ -47,13 +46,13 @@ class Events(_Events):
     :class:`Events.Scroll`
         The device was scrolled.
     """
+
     _Listener = Listener
 
     class Move(_Events.Event):
-        """A move event.
-        """
-        def __init__(self, x, y,
-                     timestamp: int, is_injected: bool):
+        """A move event."""
+
+        def __init__(self, x, y, timestamp: int, is_injected: bool):
             #: The X screen coordinate.
             self.x = x
 
@@ -64,10 +63,9 @@ class Events(_Events):
             self.is_injected = is_injected
 
     class Click(_Events.Event):
-        """A click event.
-        """
-        def __init__(self, x, y, button, pressed,
-                     timestamp: int, is_injected: bool):
+        """A click event."""
+
+        def __init__(self, x, y, button, pressed, timestamp: int, is_injected: bool):
             #: The X screen coordinate.
             self.x = x
 
@@ -84,10 +82,9 @@ class Events(_Events):
             self.is_injected = is_injected
 
     class Scroll(_Events.Event):
-        """A scroll event.
-        """
-        def __init__(self, x, y, dx, dy,
-                     timestamp: int, is_injected: bool):
+        """A scroll event."""
+
+        def __init__(self, x, y, dx, dy, timestamp: int, is_injected: bool):
             #: The X screen coordinate.
             self.x = x
 
@@ -105,6 +102,5 @@ class Events(_Events):
 
     def __init__(self):
         super(Events, self).__init__(
-            on_move=self.Move,
-            on_click=self.Click,
-            on_scroll=self.Scroll)
+            on_move=self.Move, on_click=self.Click, on_scroll=self.Scroll
+        )

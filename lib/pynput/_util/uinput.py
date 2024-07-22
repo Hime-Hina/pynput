@@ -18,7 +18,6 @@
 Utility functions and classes for the *uinput* backend.
 """
 
-# pylint: disable=R0903
 # We implement stubs
 
 import evdev
@@ -28,6 +27,8 @@ import evdev
 def _check():
     # TODO: Implement!
     pass
+
+
 _check()
 del _check
 
@@ -38,14 +39,15 @@ class ListenerMixin(object):
     Subclasses should set a value for :attr:`_EVENTS` and implement
     :meth:`_handle`.
     """
+
     #: The events for which to listen
     _EVENTS = tuple()
 
     def __init__(self, *args, **kwargs):
         super(ListenerMixin, self).__init__(*args, **kwargs)
-        self._dev = self._device(self._options.get(
-            'device_paths',
-            evdev.list_devices()))
+        self._dev = self._device(
+            self._options.get("device_paths", evdev.list_devices())
+        )
         if self.suppress:
             self._dev.grab()
 
@@ -77,7 +79,8 @@ class ListenerMixin(object):
             next_count = sum(
                 len(codes)
                 for event, codes in capabilities.items()
-                if event in self._EVENTS)
+                if event in self._EVENTS
+            )
             if next_count > count:
                 dev = next_dev
                 count = next_count
@@ -85,7 +88,7 @@ class ListenerMixin(object):
                 next_dev.close()
 
         if dev is None:
-            raise OSError('no keyboard device available')
+            raise OSError("no keyboard device available")
         else:
             return dev
 

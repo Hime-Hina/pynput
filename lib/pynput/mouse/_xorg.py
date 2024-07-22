@@ -18,22 +18,17 @@
 The keyboard implementation for *Xorg*.
 """
 
-# pylint: disable=C0111
 # The documentation is extracted from the base classes
 
 
-# pylint: disable=E1101,E1102
 # We dynamically generate the Button class
 
-# pylint: disable=R0903
 # We implement stubs
 
-# pylint: disable=W0611
 try:
     from .._util import xorg
 except Exception as e:
-    raise ImportError('failed to acquire X connection: {}'.format(str(e)), e)
-# pylint: enable=W0611
+    raise ImportError("failed to acquire X connection: {}".format(str(e)), e)
 
 import enum
 
@@ -46,22 +41,21 @@ import Xlib.X
 from .._util.xorg import ListenerMixin, display_manager
 from . import _base
 
-# pylint: disable=C0103
 Button = enum.Enum(
-    'Button',
+    "Button",
     module=__name__,
     names=[
-        ('unknown', None),
-        ('left', 1),
-        ('middle', 2),
-        ('right', 3),
-        ('scroll_up', 4),
-        ('scroll_down', 5),
-        ('scroll_left', 6),
-        ('scroll_right', 7)] + [
-            ('button%d' % i, i)
-            for i in range(8, 31)])
-# pylint: enable=C0103
+        ("unknown", None),
+        ("left", 1),
+        ("middle", 2),
+        ("right", 3),
+        ("scroll_up", 4),
+        ("scroll_down", 5),
+        ("scroll_left", 6),
+        ("scroll_right", 7),
+    ]
+    + [("button%d" % i, i) for i in range(8, 31)],
+)
 
 
 class Controller(_base.Controller):
@@ -70,7 +64,7 @@ class Controller(_base.Controller):
         self._display = Xlib.display.Display()
 
     def __del__(self):
-        if hasattr(self, '_display'):
+        if hasattr(self, "_display"):
             self._display.close()
 
     def _position_get(self):
@@ -87,13 +81,14 @@ class Controller(_base.Controller):
         dx, dy = self._check_bounds(dx, dy)
         if dy:
             self.click(
-                button=Button.scroll_up if dy > 0 else Button.scroll_down,
-                count=abs(dy))
+                button=Button.scroll_up if dy > 0 else Button.scroll_down, count=abs(dy)
+            )
 
         if dx:
             self.click(
                 button=Button.scroll_right if dx > 0 else Button.scroll_left,
-                count=abs(dx))
+                count=abs(dx),
+            )
 
     def _press(self, button):
         with display_manager(self._display) as dm:
@@ -109,9 +104,7 @@ class Controller(_base.Controller):
 
         :param args: The values to verify.
         """
-        if not all(
-                (-0x7fff - 1) <= number <= 0x7fff
-                for number in args):
+        if not all((-0x7FFF - 1) <= number <= 0x7FFF for number in args):
             raise ValueError(args)
         else:
             return tuple(int(p) for p in args)
@@ -123,11 +116,10 @@ class Listener(ListenerMixin, _base.Listener):
         Button.scroll_up.value: (0, 1),
         Button.scroll_down.value: (0, -1),
         Button.scroll_right.value: (1, 0),
-        Button.scroll_left.value: (-1, 0)}
+        Button.scroll_left.value: (-1, 0),
+    }
 
-    _EVENTS = (
-        Xlib.X.ButtonPressMask,
-        Xlib.X.ButtonReleaseMask)
+    _EVENTS = (Xlib.X.ButtonPressMask, Xlib.X.ButtonReleaseMask)
 
     def __init__(self, *args, **kwargs):
         super(Listener, self).__init__(*args, **kwargs)
@@ -153,16 +145,20 @@ class Listener(ListenerMixin, _base.Listener):
         else:
             self.on_move(px, py)
 
-
     def _suppress_start(self, display):
         display.screen().root.grab_pointer(
-            True, self._event_mask, Xlib.X.GrabModeAsync, Xlib.X.GrabModeAsync,
-            0, 0, Xlib.X.CurrentTime)
+            True,
+            self._event_mask,
+            Xlib.X.GrabModeAsync,
+            Xlib.X.GrabModeAsync,
+            0,
+            0,
+            Xlib.X.CurrentTime,
+        )
 
     def _suppress_stop(self, display):
         display.ungrab_pointer(Xlib.X.CurrentTime)
 
-    # pylint: disable=R0201
     def _button(self, detail):
         """Creates a mouse button from an event detail.
 
@@ -176,4 +172,4 @@ class Listener(ListenerMixin, _base.Listener):
             return Button(detail)
         except ValueError:
             return Button.unknown
-    # pylint: enable=R0201
+
