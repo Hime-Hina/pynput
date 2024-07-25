@@ -45,7 +45,7 @@ RESOLUTIONS = {
 }
 
 
-def backend(package):
+def backend(package: str):
     """Returns the backend module for a package.
 
     :param str package: The package for which to load a backend.
@@ -140,7 +140,7 @@ class AbstractListener(threading.Thread):
     _HANDLED_EXCEPTIONS = tuple()
 
     def __init__(self, suppress=False, **kwargs):
-        super(AbstractListener, self).__init__()
+        super().__init__()
 
         def wrapper(f):
             def inner(*args):
@@ -282,13 +282,13 @@ class AbstractListener(threading.Thread):
             return
 
 
-class Events(object):
+class Events:
     """A base class to enable iterating over events."""
 
     #: The listener class providing events.
-    _Listener = None
+    _ListenerClass: type[AbstractListener]
 
-    class Event(object):
+    class Event:
         def __str__(self):
             return "{}({})".format(
                 self.__class__.__name__,
@@ -303,10 +303,9 @@ class Events(object):
             )
 
     def __init__(self, *args, **kwargs):
-        super(Events, self).__init__()
         self._event_queue = queue.Queue()
         self._sentinel = object()
-        self._listener = self._Listener(
+        self._listener = self._ListenerClass(
             *args, **{key: self._event_mapper(value) for (key, value) in kwargs.items()}
         )
         self.start = self._listener.start
@@ -337,7 +336,7 @@ class Events(object):
         else:
             raise StopIteration()
 
-    def get(self, timeout=None):
+    def get(self, timeout: Optional[float] = None):
         """Attempts to read the next event.
 
         :param int timeout: An optional timeout. If this is not provided, this
@@ -352,7 +351,7 @@ class Events(object):
         except queue.Empty:
             return None
 
-    def _event_mapper(self, event):
+    def _event_mapper(self, event: type[Event]):
         """Generates an event callback to transforms the callback arguments to
         an event and then publishes it.
 
@@ -371,7 +370,7 @@ class Events(object):
         return inner
 
 
-class NotifierMixin(object):
+class NotifierMixin:
     """A mixin for notifiers of fake events.
 
     This mixin can be used for controllers on platforms where sending fake

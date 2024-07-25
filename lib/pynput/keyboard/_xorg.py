@@ -39,11 +39,19 @@ import Xlib.X
 import Xlib.XK
 
 from .._util import NotifierMixin
-from .._util.xorg import (ListenerMixin, alt_gr_mask, alt_mask, char_to_keysym,
-                          display_manager, index_to_shift, keyboard_mapping,
-                          numlock_mask, shift_to_index, symbol_to_keysym)
-from .._util.xorg_keysyms import (CHARS, DEAD_KEYS, KEYPAD_KEYS, KEYSYMS,
-                                  SYMBOLS)
+from .._util.xorg import (
+    ListenerMixin,
+    alt_gr_mask,
+    alt_mask,
+    char_to_keysym,
+    display_manager,
+    index_to_shift,
+    keyboard_mapping,
+    numlock_mask,
+    shift_to_index,
+    symbol_to_keysym,
+)
+from .._util.xorg_keysyms import CHARS, DEAD_KEYS, KEYPAD_KEYS, KEYSYMS, SYMBOLS
 from . import _base
 
 

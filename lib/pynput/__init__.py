@@ -39,5 +39,4 @@ def _logger(cls):
     )
 
 
-from . import keyboard
-from . import mouse
+from . import keyboard, mouse

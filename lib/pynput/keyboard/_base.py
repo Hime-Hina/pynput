@@ -27,6 +27,7 @@ import contextlib
 import enum
 import threading
 import unicodedata
+from typing import Any, Callable, Dict, Optional, Union
 
 import six
 
@@ -34,7 +35,7 @@ from .. import _logger
 from .._util import AbstractListener, prefix
 
 
-class KeyCode(object):
+class KeyCode:
     """
     A :class:`KeyCode` represents the description of a key code used by the
     operating system.
@@ -43,12 +44,23 @@ class KeyCode(object):
     #: The names of attributes used as platform extensions.
     _PLATFORM_EXTENSIONS = []
 
-    def __init__(self, vk=None, char=None, is_dead=False, **kwargs):
+    def __init__(
+        self,
+        vk: Optional[int] = None,
+        char: Optional[str] = None,
+        is_dead=False,
+        **kwargs,
+    ):
+        if vk is None and char is None:
+            raise ValueError("Either vk or char must be set")
+
         self.vk = vk
         self.char = six.text_type(char) if char is not None else None
         self.is_dead = is_dead
 
         if self.is_dead:
+            if self.char is None:
+                raise ValueError("Dead keys must have a character")
             try:
                 self.combining = unicodedata.lookup(
                     "COMBINING " + unicodedata.name(self.char)
@@ -90,7 +102,7 @@ class KeyCode(object):
     def __hash__(self):
         return hash(repr(self))
 
-    def join(self, key):
+    def join(self, key: "KeyCode"):
         """Applies this dead key to another key and returns the result.
 
         Joining a dead key with space (``' '``) or itself yields the non-dead
@@ -106,7 +118,7 @@ class KeyCode(object):
         :raises ValueError: if the keys cannot be joined
         """
         # A non-dead key cannot be joined
-        if not self.is_dead:
+        if not self.is_dead or self.char is None:
             raise ValueError(self)
 
         # Joining two of the same keycodes, or joining with space, yields the
@@ -115,7 +127,7 @@ class KeyCode(object):
             return self.from_char(self.char)
 
         # Otherwise we combine the characters
-        if key.char is not None:
+        if key.char is not None and self.combining is not None:
             combined = unicodedata.normalize("NFC", key.char + self.combining)
             if combined:
                 return self.from_char(combined)
@@ -123,7 +135,7 @@ class KeyCode(object):
         raise ValueError(key)
 
     @classmethod
-    def from_vk(cls, vk, **kwargs):
+    def from_vk(cls, vk: int, **kwargs: Any):
         """Creates a key from a virtual key code.
 
         :param vk: The virtual key code.
@@ -135,7 +147,7 @@ class KeyCode(object):
         return cls(vk=vk, **kwargs)
 
     @classmethod
-    def from_char(cls, char, **kwargs):
+    def from_char(cls, char: str, **kwargs: Any):
         """Creates a key from a character.
 
         :param str char: The character.
@@ -145,7 +157,7 @@ class KeyCode(object):
         return cls(char=char, **kwargs)
 
     @classmethod
-    def from_dead(cls, char, **kwargs):
+    def from_dead(cls, char: str, **kwargs: Any):
         """Creates a dead key.
 
         :param char: The dead key. This should be the unicode character
@@ -315,7 +327,7 @@ class Key(enum.Enum):
     scroll_lock = KeyCode.from_vk(0)
 
 
-class Controller(object):
+class Controller:
     """A controller for sending virtual keyboard events to the system."""
 
     #: The virtual key codes
@@ -702,16 +714,34 @@ class Listener(AbstractListener):
             system wide.
     """
 
-    def __init__(self, on_press=None, on_release=None, suppress=False, **kwargs):
+    # (key: Key | KeyCode | None, timestamp: int, is_injected: bool) -> bool | None
+    OnPressCallbackType = Callable[
+        [Union[Key, KeyCode, None], int, bool], Optional[bool]
+    ]
+    OnReleaseCallbackType = Callable[
+        [Union[Key, KeyCode, None], int, bool], Optional[bool]
+    ]
+
+    def __init__(
+        self,
+        on_press: Optional[OnPressCallbackType] = None,
+        on_release: Optional[OnReleaseCallbackType] = None,
+        suppress=False,
+        **kwargs,
+    ):
         self._log = _logger(self.__class__)
         option_prefix = prefix(Listener, self.__class__)
+        if option_prefix is None:
+            raise ValueError("Unknown platform")
         self._options = {
             key[len(option_prefix) :]: value
             for key, value in kwargs.items()
             if key.startswith(option_prefix)
         }
         super(Listener, self).__init__(
-            on_press=on_press, on_release=on_release, suppress=suppress
+            on_press=on_press,
+            on_release=on_release,
+            suppress=suppress,
         )
 
     def canonical(self, key):

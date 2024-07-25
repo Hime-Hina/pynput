@@ -51,7 +51,7 @@ class Button(enum.Enum):
     right = 3
 
 
-class Controller(object):
+class Controller:
     """A controller for sending virtual mouse events to the system."""
 
     def __init__(self):
@@ -250,11 +250,15 @@ class Listener(AbstractListener):
             system wide.
     """
 
+    OnMoveCallbackType = Callable[[int, int, int, bool], Optional[bool]]
+    OnClickCallbackType = Callable[[int, int, Button, bool, int, bool], Optional[bool]]
+    OnScrollCallbackType = Callable[[int, int, int, int, int, bool], Optional[bool]]
+
     def __init__(
         self,
-        on_move: Optional[Callable[[int, int, int, bool], Optional[bool]]] = None,
-        on_click=None,
-        on_scroll=None,
+        on_move: Optional[OnMoveCallbackType] = None,
+        on_click: Optional[OnClickCallbackType] = None,
+        on_scroll: Optional[OnScrollCallbackType] = None,
         suppress=False,
         **kwargs,
     ):

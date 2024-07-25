@@ -372,7 +372,7 @@ def symbol_to_keysym(symbol):
     )
 
 
-class ListenerMixin(object):
+class ListenerMixin:
     """A mixin for *X* event listeners.
 
     Subclasses should set a value for :attr:`_EVENTS` and implement

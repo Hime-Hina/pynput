@@ -73,7 +73,7 @@ def _wrapped(value):
         CFRelease(wrapped_value)
 
 
-class CarbonExtra(object):
+class CarbonExtra:
     """A class exposing some missing functionality from *Carbon* as class
     attributes.
     """
@@ -184,7 +184,7 @@ def get_unicode_to_keycode_map():
         return {keycode_to_string(context, keycode): keycode for keycode in range(128)}
 
 
-class ListenerMixin(object):
+class ListenerMixin:
     """A mixin for *Quartz* event listeners.
 
     Subclasses should set a value for :attr:`_EVENTS` and implement

@@ -22,14 +22,20 @@ See the documentation for more information.
 
 # Button, Controller and Listener are not constants
 
-from .._util import Events as _Events
-from .._util import backend
+import platform
+from typing import Type
 
-backend = backend(__name__)
-Button = backend.Button
-Controller = backend.Controller
-Listener = backend.Listener
-del backend
+from .._util import Events as _Events
+
+system = platform.system()
+if system == "Windows":
+    from ._win32 import Button, Controller, Listener
+elif system == "Darwin":
+    from ._darwin import Button, Controller, Listener
+elif system == "Linux":
+    from ._xorg import Button, Controller, Listener
+else:
+    from ._dummy import Button, Controller, Listener
 
 
 class Events(_Events):
@@ -47,12 +53,18 @@ class Events(_Events):
         The device was scrolled.
     """
 
-    _Listener = Listener
+    _ListenerClass = Listener
 
     class Move(_Events.Event):
         """A move event."""
 
-        def __init__(self, x, y, timestamp: int, is_injected: bool):
+        def __init__(
+            self,
+            x: int,
+            y: int,
+            timestamp: int,
+            is_injected: bool,
+        ):
             #: The X screen coordinate.
             self.x = x
 
@@ -65,7 +77,15 @@ class Events(_Events):
     class Click(_Events.Event):
         """A click event."""
 
-        def __init__(self, x, y, button, pressed, timestamp: int, is_injected: bool):
+        def __init__(
+            self,
+            x: int,
+            y: int,
+            button: Type[Button],
+            pressed: bool,
+            timestamp: int,
+            is_injected: bool,
+        ):
             #: The X screen coordinate.
             self.x = x
 
@@ -84,7 +104,15 @@ class Events(_Events):
     class Scroll(_Events.Event):
         """A scroll event."""
 
-        def __init__(self, x, y, dx, dy, timestamp: int, is_injected: bool):
+        def __init__(
+            self,
+            x: int,
+            y: int,
+            dx: int,
+            dy: int,
+            timestamp: int,
+            is_injected: bool,
+        ):
             #: The X screen coordinate.
             self.x = x
 
@@ -102,5 +130,7 @@ class Events(_Events):
 
     def __init__(self):
         super(Events, self).__init__(
-            on_move=self.Move, on_click=self.Click, on_scroll=self.Scroll
+            on_move=self.Move,
+            on_click=self.Click,
+            on_scroll=self.Scroll,
         )

@@ -32,17 +32,9 @@ import six
 
 from .._util import AbstractListener
 from .._util import win32_vks as VK
-from .._util.win32 import (
-    INPUT,
-    KEYBDINPUT,
-    INPUT_union,
-    KeyTranslator,
-    ListenerMixin,
-    MapVirtualKey,
-    SendInput,
-    SystemHook,
-    VkKeyScan,
-)
+from .._util.win32 import (INPUT, KEYBDINPUT, INPUT_union, KeyTranslator,
+                           ListenerMixin, MapVirtualKey, SendInput, SystemHook,
+                           VkKeyScan)
 from . import _base
 
 
@@ -58,7 +50,7 @@ class KeyCode(_base.KeyCode):
     _flags = None
     _scan = None
 
-    def _parameters(self, is_press):
+    def _parameters(self, is_press: bool):
         """The parameters to pass to ``SendInput`` to generate this key.
 
         :param bool is_press: Whether to generate a press event.
@@ -70,22 +62,24 @@ class KeyCode(_base.KeyCode):
         :raise ValueError: if this key is a unicode character that cannot be
         represented by a single UTF-16 value
         """
-        if self.vk:
+        if self.vk is not None:
             vk = self.vk
-            scan = self._scan or MapVirtualKey(vk, MapVirtualKey.MAPVK_VK_TO_VSC)
+            scan = self._scan or MapVirtualKey(vk, MapVirtualKey.MAPVK_VK_TO_VSC)  # type: ignore
             flags = 0
-        elif ord(self.char) > 0xFFFF:
-            raise ValueError
-        else:
+        elif self.char is not None and ord(self.char) <= 0xFFFF:
             res = VkKeyScan(self.char)
             if (res >> 8) & 0xFF == 0:
                 vk = res & 0xFF
-                scan = self._scan or MapVirtualKey(vk, MapVirtualKey.MAPVK_VK_TO_VSC)
+                scan = self._scan or MapVirtualKey(
+                    vk, MapVirtualKey.MAPVK_VK_TO_VSC  # type: ignore
+                )
                 flags = 0
             else:
                 vk = 0
                 scan = ord(self.char)
                 flags = KEYBDINPUT.UNICODE
+        else:
+            raise ValueError
         state_flags = KEYBDINPUT.KEYUP if not is_press else 0
         return dict(
             dwFlags=(self._flags or 0) | flags | state_flags, wVk=vk, wScan=scan
@@ -309,6 +303,40 @@ class Listener(ListenerMixin, _base.Listener):
         vk = data.vk
         is_injected = data.is_injected
         timestamp = data.timestamp
+
+        # If the key has the UTF-16 flag, we treat it as a unicode character,
+        # otherwise convert the event to a KeyCode; this may fail, and in that
+        # case we pass None
+        is_utf16 = msg & self._UTF16_FLAG
+        if is_utf16:
+            msg = msg ^ self._UTF16_FLAG
+            scan = vk
+            key = KeyCode.from_char(six.unichr(scan))
+        else:
+            try:
+                key = self._event_to_key(msg, vk)
+            except OSError:
+                key = None
+
+        if msg in self._PRESS_MESSAGES:
+            self.on_press(key, timestamp, is_injected)
+
+        elif msg in self._RELEASE_MESSAGES:
+            self.on_release(key, timestamp, is_injected)
+
+    def _handle(self, code, msg, lpdata, timestamp):
+        if code != SystemHook.HC_ACTION:
+            return None
+
+        data = ctypes.cast(lpdata, self._LPKBDLLHOOKSTRUCT).contents
+        # Suppress further propagation of the event if it is filtered
+        if self._event_filter(msg, data) is False:
+            return None
+
+        is_packet = data.vkCode == self._VK_PACKET
+        msg= msg|self._UTF16_FLAG if is_packet else msg
+        vk = data.scanCode if is_packet else data.vkCode
+        is_injected = bool(data.flags & self._LLKHF_INJECTED)
 
         # If the key has the UTF-16 flag, we treat it as a unicode character,
         # otherwise convert the event to a KeyCode; this may fail, and in that

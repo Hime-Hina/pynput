@@ -33,7 +33,7 @@ _check()
 del _check
 
 
-class ListenerMixin(object):
+class ListenerMixin:
     """A mixin for *uinput* event listeners.
 
     Subclasses should set a value for :attr:`_EVENTS` and implement

@@ -41,21 +41,41 @@ import Xlib.X
 from .._util.xorg import ListenerMixin, display_manager
 from . import _base
 
-Button = enum.Enum(
-    "Button",
-    module=__name__,
-    names=[
-        ("unknown", None),
-        ("left", 1),
-        ("middle", 2),
-        ("right", 3),
-        ("scroll_up", 4),
-        ("scroll_down", 5),
-        ("scroll_left", 6),
-        ("scroll_right", 7),
-    ]
-    + [("button%d" % i, i) for i in range(8, 31)],
-)
+
+class Button(enum.Enum):
+    """The various buttons."""
+
+    unknown = None
+    left = 1
+    middle = 2
+    right = 3
+    scroll_up = 4
+    scroll_down = 5
+    scroll_left = 6
+    scroll_right = 7
+    button8 = 8
+    button9 = 9
+    button10 = 10
+    button11 = 11
+    button12 = 12
+    button13 = 13
+    button14 = 14
+    button15 = 15
+    button16 = 16
+    button17 = 17
+    button18 = 18
+    button19 = 19
+    button20 = 20
+    button21 = 21
+    button22 = 22
+    button23 = 23
+    button24 = 24
+    button25 = 25
+    button26 = 26
+    button27 = 27
+    button28 = 28
+    button29 = 29
+    button30 = 30
 
 
 class Controller(_base.Controller):
@@ -124,7 +144,7 @@ class Listener(ListenerMixin, _base.Listener):
     def __init__(self, *args, **kwargs):
         super(Listener, self).__init__(*args, **kwargs)
 
-    def _handle(self, dummy_display, event):
+    def _handle(self, display, event):
         px = event.root_x
         py = event.root_y
 
@@ -172,4 +192,3 @@ class Listener(ListenerMixin, _base.Listener):
             return Button(detail)
         except ValueError:
             return Button.unknown
-

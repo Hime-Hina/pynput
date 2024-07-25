@@ -23,17 +23,23 @@ See the documentation for more information.
 # KeyCode, Key, Controller and Listener are not constants
 
 import itertools
+import platform
+from typing import TYPE_CHECKING, Type, Union
 
 from .._util import Events as _Events
-from .._util import backend
 
-backend = backend(__name__)
-KeyCode = backend.KeyCode
-Key = backend.Key
-Controller = backend.Controller
-Listener = backend.Listener
-del backend
-
+system = platform.system()
+if system == "Windows":
+    from ._win32 import Controller, Key, KeyCode, Listener
+elif system == "Darwin":
+    from ._darwin import Controller, Key, KeyCode, Listener
+elif system == "Linux":
+    try:
+        from ._xorg import Controller, Key, KeyCode, Listener
+    except ImportError:
+        from ._uinput import Controller, Key, KeyCode, Listener
+else:
+    from ._dummy import Controller, Key, KeyCode, Listener
 
 # it is easier to read column aligned keys
 #: The keys used as modifiers; the first value in each tuple is the
@@ -43,7 +49,10 @@ _MODIFIER_KEYS = (
     (Key.alt, (Key.alt.value, Key.alt_l.value, Key.alt_r.value)),
     (Key.cmd, (Key.cmd.value, Key.cmd_l.value, Key.cmd_r.value)),
     (Key.ctrl, (Key.ctrl.value, Key.ctrl_l.value, Key.ctrl_r.value)),
-    (Key.shift, (Key.shift.value, Key.shift_l.value, Key.shift_r.value)),
+    (
+        Key.shift,
+        (Key.shift.value, Key.shift_l.value, Key.shift_r.value),
+    ),
 )
 
 #: Normalised modifiers as a mapping from virtual key code to basic modifier.
@@ -70,12 +79,17 @@ class Events(_Events):
         A key was released.
     """
 
-    _Listener = Listener
+    _ListenerClass = Listener
 
     class Press(_Events.Event):
         """A key press event."""
 
-        def __init__(self, key, timestamp: int, is_injected: bool):
+        def __init__(
+            self,
+            key: Union[Key, KeyCode],
+            timestamp: int,
+            is_injected: bool,
+        ):
             #: The key.
             self.key = key
             self.timestamp = timestamp
@@ -84,17 +98,25 @@ class Events(_Events):
     class Release(_Events.Event):
         """A key release event."""
 
-        def __init__(self, key, timestamp: int, is_injected: bool):
+        def __init__(
+            self,
+            key: Union[Key, KeyCode],
+            timestamp: int,
+            is_injected: bool,
+        ):
             #: The key.
             self.key = key
             self.timestamp = timestamp
             self.is_injected = is_injected
 
     def __init__(self):
-        super(Events, self).__init__(on_press=self.Press, on_release=self.Release)
+        super().__init__(
+            on_press=self.Press,
+            on_release=self.Release,
+        )
 
 
-class HotKey(object):
+class HotKey:
     """A combination of keys acting as a hotkey.
 
     This class acts as a container of hotkey state for a keyboard listener.
@@ -150,6 +172,8 @@ class HotKey(object):
                     if key in _NORMAL_MODIFIERS.values():
                         return key
                     else:
+                        assert key.value is not None, "Key has no value"
+                        assert key.value.vk is not None, "KeyCode has no vk"
                         return KeyCode.from_vk(key.value.vk)
                 except KeyError:
                     try:
@@ -195,7 +219,7 @@ class HotKey(object):
             self._state.remove(key)
 
 
-class GlobalHotKeys(Listener):
+class GlobalHotKeys(Listener):  # type: ignore
     """A keyboard listener supporting a number of global hotkeys.
 
     This is a convenience wrapper to simplify registering a number of global

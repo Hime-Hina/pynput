@@ -129,7 +129,7 @@ GetCurrentThreadId = windll.kernel32.GetCurrentThreadId
 GetCurrentThreadId.restype = wintypes.DWORD
 
 
-class MessageLoop(object):
+class MessageLoop:
     """A class representing a message loop."""
 
     #: The message that signals this loop to terminate
@@ -225,7 +225,7 @@ class MessageLoop(object):
         self._PostThreadMessage(self._threadid, msg, wparam, lparam)
 
 
-class SystemHook(object):
+class SystemHook:
     """A class to handle Windows hooks."""
 
     #: The hook action value for actions we should check
@@ -305,7 +305,7 @@ class SystemHook(object):
         return SystemHook._CallNextHookEx(0, code, msg, lpdata)
 
 
-class ListenerMixin(object):
+class ListenerMixin:
     """A mixin for *win32* event listeners.
 
     Subclasses should set a value for :attr:`_EVENTS` and implement
@@ -371,12 +371,17 @@ class ListenerMixin(object):
         loop started with this listener using :meth:`MessageLoop.post`. The
         parameters are retrieved with a call to :meth:`_handle`.
         """
-        try:
-            converted = self._convert(code, msg, lpdata, timestamp)
-            if converted is not None:
-                self._message_loop.post(self._WM_PROCESS, *converted)
-        except NotImplementedError:
-            self._handle(code, msg, lpdata, timestamp)
+        # try:
+        #     converted = self._convert(code, msg, lpdata, timestamp)
+        #     if converted is not None:
+        #         self._message_loop.post(self._WM_PROCESS, *converted)
+        # except NotImplementedError:
+        #     self._handle(code, msg, lpdata, timestamp)
+
+        converted = self._convert(code, msg, lpdata, timestamp)
+        if converted is not None:
+            self._message_loop.post(self._WM_PROCESS, *converted)
+        # self._handle(code, msg, lpdata, timestamp)
 
         if self.suppress:
             self.suppress_event()
@@ -415,7 +420,7 @@ class ListenerMixin(object):
         raise NotImplementedError()
 
 
-class KeyTranslator(object):
+class KeyTranslator:
     """A class to translate virtual key codes to characters."""
 
     _GetAsyncKeyState = ctypes.windll.user32.GetAsyncKeyState

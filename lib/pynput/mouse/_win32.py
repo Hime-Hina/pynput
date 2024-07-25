@@ -28,8 +28,14 @@ from ctypes import windll, wintypes
 from typing import NamedTuple
 
 from .._util import AbstractListener, NotifierMixin
-from .._util.win32 import (INPUT, MOUSEINPUT, INPUT_union, ListenerMixin,
-                           SendInput, SystemHook)
+from .._util.win32 import (
+    INPUT,
+    MOUSEINPUT,
+    INPUT_union,
+    ListenerMixin,
+    SendInput,
+    SystemHook,
+)
 from . import _base
 
 #: A constant used as a factor when constructing mouse scroll data.

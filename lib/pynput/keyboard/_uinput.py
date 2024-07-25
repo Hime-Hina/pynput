@@ -130,7 +130,7 @@ class Key(enum.Enum):
     scroll_lock = KeyCode._from_name("Scroll_Lock", "KEY_SCROLLLOCK")
 
 
-class Layout(object):
+class Layout:
     """A description of the keyboard layout."""
 
     #: A regular expression to parse keycodes in the dumpkeys output
@@ -138,7 +138,7 @@ class Layout(object):
     #: The groups are: keycode number, key names.
     KEYCODE_RE = re.compile(r"keycode\s+(\d+)\s+=(.*)")
 
-    class Key(object):
+    class Key:
         """A key in a keyboard layout."""
 
         def __init__(self, normal, shifted, alt, alt_shifted):
